@@ -1,0 +1,3 @@
+syncronous api - program hangs until function is complete, then proceed to execute the ret of the program
+asyncronous api - program doesnt hang until function is comlete, resumes rest of the program while api is executed
+		  in the background
