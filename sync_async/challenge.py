@@ -1,5 +1,6 @@
 import time
 import backoff
+import asyncio
 from unreliableapi import unreliable_api as unreliable_api
 
 def on_backoff_handler(details):
@@ -8,6 +9,8 @@ def on_backoff_handler(details):
 def on_success_handler(details):
     print("Function succeeded without hitting max retries.")
 
+
+### Synchronous Fetcher with liean backoff
 def linear_backoff():
     i = 1
     while True:
@@ -24,11 +27,37 @@ def linear_backoff():
 def sync_fetcher():
     try:
         data = unreliable_api()
-        print(f"good data number {i+1}: ", data)
+        print(f"(sync) good data number {i+1}: ", data)
     except Exception as e:
-        print(f"Error fetching data at iteration {i+1}: {e}")
+        print(f"(sync) Error fetching data at iteration {i+1}: {e}")
         raise  # Let backoff handle the retry
 
+
+
+### async fetcher with exponential backoff
+@backoff.on_exception(
+    backoff.expo, # exponential
+    Exception,
+    max_tries=20,
+    on_backoff=on_backoff_handler,
+    #on_success=on_success_handler
+)
+async def async_fetcher():
+    try:
+        data = unreliable_api()
+        print(f"(a-sync) good data: ", data)
+    except Exception as e:
+        print(f"(a-sync) Error fetching data: {e}")
+        raise  # Let backoff handle the retry
+
+async def main_async():
+    await asyncio.gather(async_fetcher(), async_fetcher(), async_fetcher(), async_fetcher(), async_fetcher())
+
+
 if __name__ == "__main__":
+    s = time.perf_counter()
+    asyncio.run(main_async())
     for i in range(5):
         sync_fetcher()
+    elapsed = time.perf_counter() - s
+    print(f"{__file__} executed in {elapsed:0.2f} seconds.")
